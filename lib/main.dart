@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
+  Stripe.publishableKey =
+      'pk_test_51JpJPXHOQj6xr8T2DzMs9m18d27qLuOaxtrvUK2yNGAm23IAW29zMyncx3wTmggHt5eceozZPBxx89OVwowM5lh900YJrfG42H';
   runApp(const MyApp());
 }
 
@@ -50,7 +54,11 @@ class _DashboardState extends State<Dashboard> {
                       ),
                     ),
                     child: TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        final url = Uri.parse(
+                            'https://asia-northeast1-flutterstripewithfunctions.cloudfunctions.net/stripePaymentIntent');
+                        final response = http.post(url);
+                      },
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.all(6.0),
                         primary: Colors.white,
