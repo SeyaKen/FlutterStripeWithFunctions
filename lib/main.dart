@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:http/http.dart' as http;
@@ -27,6 +29,12 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
+  calculateAmount(String amount) {
+    // int.parseで文字列を数字にする。
+    final price = int.parse(amount) * 100;
+    return price.toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -54,10 +62,41 @@ class _DashboardState extends State<Dashboard> {
                       ),
                     ),
                     child: TextButton(
-                      onPressed: () {
-                        final url = Uri.parse(
-                            'https://asia-northeast1-flutterstripewithfunctions.cloudfunctions.net/stripePaymentIntent');
-                        final response = http.post(url);
+                      onPressed: () async {
+                        try {
+                          final url = Uri.parse(
+                              'https://asia-northeast1-flutterstripewithfunctions.cloudfunctions.net/stripePaymentIntent');
+                          Map<String, dynamic> body = {
+                            "amount": calculateAmount('1'),
+                            "currency": "JPY",
+                          };
+                          final response = await http.post(url, body: body);
+                          var jsonResponse = jsonDecode(response.body);
+                          Map<String, dynamic> paymentIntentData = jsonResponse;
+                          if (paymentIntentData['paymentIntent'] != "" &&
+                              paymentIntentData['paymentIntent'] != null) {
+                            String _intent = paymentIntentData['paymentIntent'];
+                            await Stripe.instance.initPaymentSheet(
+                              paymentSheetParameters:
+                                  SetupPaymentSheetParameters(
+                                paymentIntentClientSecret: _intent,
+                                applePay: false,
+                                googlePay: false,
+                                testEnv: true,
+                                style: ThemeMode.light,
+                                merchantCountryCode: 'JP',
+                                merchantDisplayName: 'My name',
+                                customerId: paymentIntentData['customer'],
+                                customerEphemeralKeySecret:
+                                    paymentIntentData['ephemeralKey'],
+                              ),
+                            );
+                            await Stripe.instance.presentPaymentSheet();
+                          }
+                        } catch (e) {
+                          print('バツボタンを押したときの処理');
+                          print(e.toString());
+                        }
                       },
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.all(6.0),
